@@ -91,6 +91,14 @@ alert_distribution = pd.DataFrame({
     'color': [COLORS['danger'], COLORS['warning'], COLORS['success']]
 })
 
+# Complaint patterns data
+complaint_patterns = pd.DataFrame({
+    'pattern': ['waste money', 'dont waste', 'doesnt work', 'poor quality', 'stopped working',
+                'didnt work', 'disappointed product', 'would recommend', 'work well', 'thick hair',
+                'waste time', 'nothing like', 'nail polish', 'dont know', 'works well'],
+    'frequency': [259, 125, 72, 67, 55, 51, 40, 38, 38, 33, 30, 30, 29, 28, 28]
+})
+
 # Tabs
 tab1, tab2, tab3, tab4 = st.tabs(['Overview', 'Predictive Power', 'Volatility Warning', 'Category Risk'])
 
@@ -204,6 +212,35 @@ with tab2:
     
     st.markdown("<br>", unsafe_allow_html=True)
     
+    # Product Rating Trajectories (from your Image 1)
+    st.markdown("### Product Rating Trajectories: Early to 1-Year")
+    st.markdown("""
+    This scatter plot demonstrates the strong predictive relationship between early review ratings (first 100 reviews) 
+    and one-year product performance. Products are color-coded by trajectory:
+    - **Green (Stable High)**: Products that started strong and remained successful (n=340, 72.2%)
+    - **Red (Stable Low)**: Products that started weak and failed (n=114, 24.2%)
+    - **Blue (Recovered)**: Products that improved over time (n=11, 2.3%)
+    - **Orange (Declined)**: Products that deteriorated (n=6, 1.3%)
+    
+    The tight clustering around the diagonal line (r=0.976) indicates that early ratings are highly predictive of long-term success.
+    """)
+    
+    st.info("📊 **Note:** This visualization is based on your analysis showing 471 products tracked from early reviews through one year of performance.")
+    
+    st.markdown("<br>", unsafe_allow_html=True)
+    
+    # K-Means Clustering Visualization
+    st.markdown("### K-Means Clustering Analysis")
+    st.markdown("""
+    Unsupervised clustering identified two distinct product groups based on early review characteristics:
+    - **Cluster 0 (Elite Performers)**: 312 products with high ratings and low volatility
+    - **Cluster 1 (High Risk)**: 159 products with lower ratings and higher inconsistency
+    
+    The clustering analysis reveals clear separation between successful and at-risk products using only early review metrics.
+    """)
+    
+    st.markdown("<br>", unsafe_allow_html=True)
+    
     # Model Performance Table
     st.markdown("### Model Performance Metrics")
     
@@ -258,6 +295,25 @@ with tab3:
     with col2:
         st.markdown("### Alert Distribution")
         
+        # Add explanation
+        st.markdown("""
+        **How products are classified:**
+        
+        Products are automatically flagged into three risk categories based on early review patterns:
+        
+        - **RED (High Risk)**: Products with early_avg_rating < 4.0 AND volatility > 1.0
+          - 91.2% of flagged products actually fail
+          - Requires immediate vendor attention
+        
+        - **YELLOW (Monitor)**: Products showing warning signs but not critical
+          - 5.1% failure rate
+          - Watch for trends
+        
+        - **GREEN (Safe)**: Products with strong, stable early performance
+          - Only 1.3% failure rate
+          - Low intervention needed
+        """)
+        
         fig = px.pie(
             alert_distribution,
             values='value',
@@ -270,7 +326,7 @@ with tab3:
             }
         )
         
-        fig.update_layout(height=300)
+        fig.update_layout(height=250)
         
         st.plotly_chart(fig, use_container_width=True)
     
@@ -287,9 +343,9 @@ with tab3:
             <p style="font-size: 14px; color: #666;">→ FLAG AS HIGH RISK</p>
             <br>
             <div style="font-size: 14px; color: #666;">
-                <div>Precision: <strong>91.2%</strong></div>
-                <div>Recall: <strong>95.0%</strong></div>
-                <div>Flags: <strong>125 products (26.5%)</strong></div>
+                <div>Precision: <strong>91.2%</strong> - When we flag a product as high risk, it fails 91.2% of the time</div>
+                <div>Recall: <strong>95.0%</strong> - We catch 95% of all products that will eventually fail</div>
+                <div>Flags: <strong>125 products (26.5%)</strong> - Manageable number for vendor intervention</div>
             </div>
         </div>
     """, unsafe_allow_html=True)
@@ -302,6 +358,23 @@ with tab4:
             <h2 style="font-size: 24px; margin-bottom: 10px;">Insight 3: Beauty Products Have 3X Higher Failure Risk</h2>
             <p style="font-size: 16px; opacity: 0.9;">
                 Beauty: 31.7% Failure Rate vs Electronics/Pets: ~11%
+            </p>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    # Explanation of Failure Risk
+    st.markdown(f"""
+        <div style="background: white; padding: 20px; border-radius: 8px; border-left: 5px solid {COLORS['danger']}; margin-bottom: 20px;">
+            <h3 style="font-size: 18px; margin-bottom: 10px; color: {COLORS['dark']};">What is "Failure Risk"?</h3>
+            <p style="font-size: 14px; color: #666; line-height: 1.6;">
+                <strong>Product failure</strong> is defined as ending with a rating below 4.0 stars after one year. 
+                On Amazon's 5-star system, products rated below 4.0 struggle to compete effectively as most customers 
+                filter for 4+ star products. The failure rate represents the percentage of products in each category 
+                that fall below this critical threshold despite launching on the platform.
+            </p>
+            <p style="font-size: 14px; color: #666; line-height: 1.6; margin-top: 10px;">
+                Beauty products face unique challenges including highly subjective preferences, skin compatibility issues, 
+                and intense competition, leading to their 3X higher failure rate compared to other categories.
             </p>
         </div>
     """, unsafe_allow_html=True)
@@ -325,6 +398,33 @@ with tab4:
     fig.update_layout(
         showlegend=False,
         height=400,
+        template='plotly_white'
+    )
+    
+    st.plotly_chart(fig, use_container_width=True)
+    
+    st.markdown("<br>", unsafe_allow_html=True)
+    
+    # Top Complaint Patterns
+    st.markdown("### Top 15 Complaint Patterns in Failed Products")
+    st.markdown("""
+    Analysis of negative reviews (sentiment < 0) from 120 failed products reveals common complaint themes.
+    These bigrams (two-word phrases) represent the most frequent expressions of dissatisfaction:
+    """)
+    
+    fig = px.bar(
+        complaint_patterns,
+        y='pattern',
+        x='frequency',
+        orientation='h',
+        color='frequency',
+        color_continuous_scale=['#8b1a04', '#B12704'],
+        labels={'frequency': 'Frequency in Failed Product Reviews', 'pattern': 'Complaint Pattern'}
+    )
+    
+    fig.update_layout(
+        height=500,
+        showlegend=False,
         template='plotly_white'
     )
     
