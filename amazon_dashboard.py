@@ -402,7 +402,7 @@ with tab3:
         st.markdown("""
         **Risk Classification:**
         
-        - **RED**: Rating <4.0 AND volatility >1.0 → 91.2% actually fail
+        - **RED**: Rating <4.0 AND volatility >1.0 → 91.2% precision when flagged
         - **YELLOW**: Warning signs → 5.1% fail
         - **GREEN**: Strong & stable → 1.3% fail
         """)
